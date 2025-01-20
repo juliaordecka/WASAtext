@@ -6,7 +6,7 @@ info:
   version: 0.0.1
 tags:
   - name: login
-    description: Tag for logging in #test 3
+    description: Tag for logging in #test 4
   - name: user
     description: Tag for user operations
   - name: conversations
