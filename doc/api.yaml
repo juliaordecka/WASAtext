@@ -11,7 +11,7 @@ tags:
     description: Tag for user operations
   - name: conversations
     description: Tag for conversation operations
-  - name: messages
+  - name: messagess
     description: Tag for message operations
   - name: groups
     description: Tag for group operations
