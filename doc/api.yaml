@@ -310,7 +310,7 @@ paths:
 
   /message/{message_id}:
     parameters:
-      - $ref: "#/components/parameters/message_id"
+      - $ref: "#/components/parameters/message_id" #testing again
     delete:
       tags: ["messages"]
       summary: Delete a message
