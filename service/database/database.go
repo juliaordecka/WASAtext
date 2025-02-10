@@ -49,6 +49,7 @@ type AppDatabase interface {
 	GetName() (string, error)
 	SetName(name string) error
 	CreateUser(User) (User, error)
+	SetUsername(User, string) (User, error)
 	Ping() error
 }
 

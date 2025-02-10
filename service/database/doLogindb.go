@@ -22,3 +22,17 @@ func (db *appdbimpl) CreateUser(u User) (User, error) {
 	u.Id = uint64(lastInsertID)
 	return u, nil
 }
+
+func (db *appdbimpl) SetUsername(u User, username string) (User, error) {
+	res, err := db.c.Exec(`UPDATE users SET Username=? WHERE Id=? AND Username=?`, u.Username, u.Id, username)
+	if err != nil {
+		return u, err
+	}
+	affected, err := res.RowsAffected()
+	if err != nil {
+		return u, err
+	} else if affected == 0 {
+		return u, err
+	}
+	return u, nil
+}
