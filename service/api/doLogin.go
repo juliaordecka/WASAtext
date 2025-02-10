@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"git.sapienzaapps.it/fantasticcoffee/fantastic-coffee-decaffeinated/service/api/reqcontext"
-//	"git.sapienzaapps.it/fantasticcoffee/fantastic-coffee-decaffeinated/service/database"
+	//	"git.sapienzaapps.it/fantasticcoffee/fantastic-coffee-decaffeinated/service/database"
 	"github.com/julienschmidt/httprouter"
 )
 
@@ -26,4 +26,3 @@ func (rt *_router) doLogin(w http.ResponseWriter, r *http.Request, ps httprouter
 	w.WriteHeader(http.StatusCreated)
 	_ = json.NewEncoder(w).Encode(user)
 }
-

@@ -20,4 +20,3 @@ func (u *User) ToDatabase() database.User {
 		Username: u.Username,
 	}
 }
-
