@@ -29,7 +29,7 @@
               <label class="form-label">Update Profile Photo</label>
               <div class="text-center mb-3">
                 <img 
-                  :src="currentUser.profilePhoto || '/default-avatar.png'" 
+                  :src="currentUser.profilePhoto || '@assets/default-pic.jpg'" 
                   class="rounded-circle mb-3" 
                   width="150" 
                   height="150" 
@@ -91,35 +91,39 @@ export default {
         this.successMsg = null
       }
     },
-    async handlePhotoUpload(event) {
-      const file = event.target.files[0]
-      if (!file) return
+async handlePhotoUpload(event) {
+  const file = event.target.files[0]
+  if (!file) return
 
-      const reader = new FileReader()
-      reader.onload = async (e) => {
-        const base64Photo = e.target.result
+  const reader = new FileReader()
+  reader.onload = async (e) => {
+    try {
+      const base64Photo = e.target.result.split(',')[1]
+      
+      // Fix the endpoint URL to match your backend
+      await this.$axios.put(`/user/${this.currentUser.username}/photo`, { 
+        photo: base64Photo
+      })
 
-        try {
-          await this.$axios.put('/username/photo', { 
-            photo: base64Photo.split(',')[1]
-          })
-
-          const updatedUser = {
-            ...this.currentUser,
-            profilePhoto: base64Photo
-          }
-          localStorage.setItem('user', JSON.stringify(updatedUser))
-          this.currentUser = updatedUser
-
-          this.successMsg = 'Profile photo updated successfully'
-          this.errorMsg = null
-        } catch (error) {
-          this.errorMsg = error.response?.data || 'Failed to update profile photo'
-          this.successMsg = null
-        }
+      const updatedUser = {
+        ...this.currentUser,
+        profilePhoto: e.target.result
       }
-      reader.readAsDataURL(file)
+      localStorage.setItem('user', JSON.stringify(updatedUser))
+      this.currentUser = updatedUser
+
+      this.successMsg = 'Profile photo updated successfully'
+      this.errorMsg = null
+    } catch (error) {
+      console.error('Update photo error:', error)
+      this.errorMsg = error.response?.data || 'Failed to update profile photo'
+      this.successMsg = null
     }
+  }
+  reader.readAsDataURL(file)
+}
+
+
   }
 }
 </script>
