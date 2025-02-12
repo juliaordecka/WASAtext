@@ -210,7 +210,7 @@ export default {
   computed: {
     sortedMessages() {
       return [...this.messages].sort((a, b) => 
-        new Date(b.sendTime) - new Date(a.sendTime)
+        new Date(a.sendTime) - new Date(b.sendTime)
       )
     }
   },
