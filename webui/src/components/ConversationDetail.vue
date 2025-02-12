@@ -264,28 +264,45 @@ export default {
         this.errorMsg = 'Failed to send message'
       }
     },
-    async handlePhotoUpload(event) {
-      const file = event.target.files[0]
-      if (!file) return
+async handlePhotoUpload(event) {
+  const file = event.target.files[0]
+  if (!file) return
 
-      const reader = new FileReader()
-      reader.onload = async (e) => {
-        try {
-          const base64Photo = e.target.result.split(',')[1]
-          
-          await this.$axios.post('/message', {
-            conversationId: this.conversation.conversationId,
-            photo: base64Photo
-          })
-          
-          await this.fetchConversationDetails()
-        } catch (error) {
-          console.error('Upload photo error:', error)
-          this.errorMsg = 'Failed to upload photo'
-        }
-      }
-      reader.readAsDataURL(file)
-    },
+  // Add size check
+  if (file.size > 5 * 1024 * 1024) { // 5MB limit
+    this.errorMsg = 'File too large. Please choose a file under 5MB.'
+    return
+  }
+
+  const reader = new FileReader()
+  reader.onload = async (e) => {
+    try {
+      const base64Photo = e.target.result.split(',')[1]
+      console.log('Sending photo with size:', base64Photo.length)
+
+      const response = await this.$axios.post('/message', {
+        conversationId: this.conversation.conversationId,
+        photo: base64Photo,
+        text: "Photo message" // Changed from empty text to actual text
+      })
+
+      console.log('Photo upload response:', response)
+      await this.fetchConversationDetails()
+      event.target.value = ''
+    } catch (error) {
+      console.error('Upload photo error details:', error.response || error)
+      this.errorMsg = `Failed to upload photo: ${error.response?.data || error.message}`
+    }
+  }
+
+  reader.onerror = (error) => {
+    console.error('FileReader error:', error)
+    this.errorMsg = 'Error reading file'
+  }
+
+  reader.readAsDataURL(file)
+},
+
     async forwardMessage(message) {
       try {
         await this.$axios.post(`/message/${message.messageId}/forward`, {

@@ -100,7 +100,7 @@ export default {
         const base64Photo = e.target.result
 
         try {
-          await this.$axios.put('/user/photo', { 
+          await this.$axios.put('/username/photo', { 
             photo: base64Photo.split(',')[1]
           })
 
