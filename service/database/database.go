@@ -157,7 +157,8 @@ func New(db *sql.DB) (AppDatabase, error) {
 		log.Println("Creating 'users' table...")
 		usersDatabase := `CREATE TABLE users (
 			Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-			Username TEXT NOT NULL UNIQUE
+			Username TEXT NOT NULL UNIQUE,
+			ProfilePhoto TEXT
 			);`
 		_, err = db.Exec(usersDatabase)
 		if err != nil {

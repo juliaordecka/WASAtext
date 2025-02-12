@@ -2,6 +2,9 @@ package database
 
 import (
     "fmt"
+	"database/sql"
+	"time"
+	"log"
 )
 
 func (db *appdbimpl) SetUserPhoto(userId uint64, photoData string) error {
@@ -17,28 +20,30 @@ func (db *appdbimpl) SetGroupPhoto(groupId int, photoData string) error {
 }
 
 func (db *appdbimpl) GetConversations(userId uint64) ([]ConversationPreview, error) {
-    rows, err := db.c.Query(`
-        SELECT 
+    query := `
+        SELECT DISTINCT  -- Add DISTINCT to prevent duplicates
             c.ConversationId,
             CASE 
                 WHEN c.GroupId = 1 THEN c.Name
-                ELSE u.Username
+                WHEN u.Username IS NOT NULL THEN u.Username
+                ELSE 'Unknown'
             END as Name,
-            CASE 
-                WHEN c.GroupId = 1 THEN c.GroupPhoto
-                ELSE u.ProfilePhoto
-            END as Photo,
-            m.SendTime,
-            m.Text,
-            m.Photo IS NOT NULL as IsPhoto,
-            c.GroupId = 1 as IsGroup
+            c.GroupPhoto as Photo,
+            m.SendTime as LastMessageTime,
+            m.Text as LastMessageText,
+            CASE WHEN m.Photo IS NOT NULL AND m.Photo != '' THEN 1 ELSE 0 END as IsPhoto,  -- Fix photo check
+            CASE WHEN c.GroupId = 1 THEN 1 ELSE 0 END as IsGroup
         FROM conversations c
-        JOIN participants p ON c.ConversationId = p.ConversationId
+        INNER JOIN participants p ON c.ConversationId = p.ConversationId AND p.UserId = ?
         LEFT JOIN messages m ON c.LastMessageId = m.MessageId
-        LEFT JOIN users u ON (c.GroupId = 0 AND p.UserId != ? AND u.Id = p.UserId)
-        WHERE p.UserId = ?
-        ORDER BY m.SendTime DESC`, userId, userId)
+        LEFT JOIN participants p2 ON c.ConversationId = p2.ConversationId AND p2.UserId != ?
+        LEFT JOIN users u ON p2.UserId = u.Id
+        GROUP BY c.ConversationId  -- Group by to avoid duplicates
+        ORDER BY COALESCE(m.SendTime, '1970-01-01') DESC`
+
+    rows, err := db.c.Query(query, userId, userId)
     if err != nil {
+        log.Printf("Query error: %v", err)
         return nil, err
     }
     defer rows.Close()
@@ -46,22 +51,44 @@ func (db *appdbimpl) GetConversations(userId uint64) ([]ConversationPreview, err
     var conversations []ConversationPreview
     for rows.Next() {
         var conv ConversationPreview
+        var photoNull sql.NullString     
+        var textNull sql.NullString      
+        var timeNull sql.NullTime        
+
         err := rows.Scan(
             &conv.ConversationId,
             &conv.Name,
-            &conv.Photo,
-            &conv.LastMessageTime,
-            &conv.LastMessageText,
+            &photoNull,                  
+            &timeNull,                   
+            &textNull,                   
             &conv.IsPhoto,
             &conv.IsGroup,
         )
         if err != nil {
+            log.Printf("Scan error: %v", err)
             return nil, err
         }
+
+        if photoNull.Valid {
+            conv.Photo = photoNull.String
+        }
+        if textNull.Valid {
+            conv.LastMessageText = textNull.String
+        }
+        if timeNull.Valid {
+            conv.LastMessageTime = timeNull.Time
+        } else {
+            conv.LastMessageTime = time.Now()
+        }
+
         conversations = append(conversations, conv)
     }
+
     return conversations, nil
 }
+
+
+
 
 func (db *appdbimpl) GetConversationDetails(convId int, userId uint64) (ConversationDetails, error) {
     var conv ConversationDetails
