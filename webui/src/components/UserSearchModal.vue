@@ -100,8 +100,13 @@ export default {
       }, 300)
     },
     startConversation(user) {
-      this.$emit('start-conversation', user)
-    }
+  this.$emit('start-conversation', {
+    id: user.id,
+    username: user.username
+  })
+}
+
+
   }
 }
 </script>

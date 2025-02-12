@@ -56,26 +56,21 @@
     </div>
   </div>
 </template>
-
 <script setup>
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { RouterLink, RouterView } from 'vue-router'
-
 const router = useRouter()
 const currentUser = ref(JSON.parse(localStorage.getItem('user')) || {})
-
 const isLoggedIn = computed(() => {
   return localStorage.getItem('token') !== null
 })
-
 const logout = () => {
   localStorage.removeItem('token')
   localStorage.removeItem('user')
   router.push('/login')
 }
 </script>
-
 <style>
 .sidebar .nav-link {
   display: flex;

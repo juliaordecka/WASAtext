@@ -1,6 +1,7 @@
 <template>
   <div class="container-fluid">
     <div class="row">
+      <!-- Conversations List -->
       <div class="col-md-4 border-end">
         <div class="d-flex justify-content-between align-items-center p-3 border-bottom">
           <h4 class="mb-0">Conversations</h4>
@@ -114,7 +115,6 @@ export default {
     this.refreshInterval = setInterval(this.fetchConversations, 5000)
   },
   beforeUnmount() {
-    // Clear the interval when component is destroyed
     if (this.refreshInterval) {
       clearInterval(this.refreshInterval)
     }
@@ -127,9 +127,9 @@ export default {
         this.conversations = response.data
         this.loading = false
       } catch (error) {
+        console.error('Fetch conversations error:', error)
         this.errorMsg = 'Failed to fetch conversations'
         this.loading = false
-        console.error(error)
       }
     },
     selectConversation(conversation) {
@@ -139,28 +139,34 @@ export default {
       return new Date(dateString).toLocaleString()
     },
     async startDirectConversation(user) {
-      try {
-        const response = await this.$axios.post('/message', {
-          recipientUsername: user.username
-        })
-        
-        // Refresh conversations to show new conversation
-        await this.fetchConversations()
-        
-        // Select the new conversation
-        const newConversation = this.conversations.find(
-          conv => conv.name === user.username
-        )
-        if (newConversation) {
-          this.selectConversation(newConversation)
-        }
-        
-        this.showUserSearchModal = false
-      } catch (error) {
-        this.errorMsg = 'Failed to start conversation'
-        console.error(error)
-      }
-    },
+  try {
+    console.log('Starting conversation with user:', user)
+    
+    // Send initial message
+    const response = await this.$axios.post('/message', {
+      text: "Hello!", // Add an initial message instead of empty text
+      recipientId: parseInt(user.id)
+    })
+    
+    // Refresh conversations list
+    await this.fetchConversations()
+    
+    // Find and select the new conversation
+    const newConversation = this.conversations.find(
+      conv => !conv.isGroup && conv.name === user.username
+    )
+    if (newConversation) {
+      this.selectConversation(newConversation)
+    }
+    
+    this.showUserSearchModal = false
+  } catch (error) {
+    console.error('Start conversation error:', error.response || error)
+    this.errorMsg = 'Failed to start conversation: ' + (error.response?.data || error.message)
+  }
+},
+
+
     onGroupCreated(group) {
       this.showCreateGroupModal = false
       this.fetchConversations()

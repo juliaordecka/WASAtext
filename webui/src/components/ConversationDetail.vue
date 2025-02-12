@@ -39,7 +39,7 @@
         <ErrorMsg v-if="errorMsg" :msg="errorMsg" />
         
         <div 
-          v-for="message in messages" 
+          v-for="message in sortedMessages" 
           :key="message.messageId" 
           class="message mb-3"
           :class="{
@@ -61,6 +61,7 @@
             <div 
               v-if="message.text" 
               class="message-text p-2 rounded"
+              style="white-space: pre-wrap;"
             >
               {{ message.text }}
             </div>
@@ -68,14 +69,19 @@
             <!-- Photo Message -->
             <img 
               v-if="message.photo" 
-              :src="message.photo" 
+              :src="'data:image/jpeg;base64,' + message.photo" 
               class="img-fluid rounded mt-2" 
               alt="Message Photo"
             >
             
+            <!-- Message Status (for sent messages) -->
+            <div v-if="message.senderId === currentUserId" class="message-status">
+              <span v-if="message.status === 'Sent'">✓</span>
+              <span v-else-if="message.status === 'Read'">✓✓</span>
+            </div>
+            
             <!-- Message Actions -->
             <div class="message-actions mt-2 d-flex justify-content-between">
-              <!-- Forward and Delete only for sent messages -->
               <div v-if="message.senderId === currentUserId">
                 <button 
                   class="btn btn-sm btn-outline-secondary me-2"
@@ -110,7 +116,7 @@
                 
                 <!-- Add Reaction Button -->
                 <button 
-                  v-if="message.senderId !== currentUserId"
+                  v-if="message.senderId !== currentUserId && !hasUserReacted(message)"
                   class="btn btn-sm btn-outline-secondary"
                   @click="showReactionModal(message)"
                 >
@@ -130,7 +136,8 @@
           class="form-control" 
           placeholder="Type a message..." 
           v-model="newMessage"
-          @keydown.enter.prevent="sendMessage"
+          @keydown.enter.exact.prevent="sendMessage"
+          @keydown.enter.shift.exact.prevent="newMessage += '\n'"
           rows="3"
         ></textarea>
         <button 
@@ -196,48 +203,54 @@ export default {
       errorMsg: null,
       currentReactionMessage: null,
       showAddMemberModal: false,
-      currentUserId: parseInt(localStorage.getItem('token'))
+      currentUserId: parseInt(localStorage.getItem('token')),
+      refreshInterval: null
+    }
+  },
+  computed: {
+    sortedMessages() {
+      return [...this.messages].sort((a, b) => 
+        new Date(b.sendTime) - new Date(a.sendTime)
+      )
     }
   },
   mounted() {
     this.fetchConversationDetails()
+    this.refreshInterval = setInterval(this.fetchConversationDetails, 5000)
+  },
+  beforeUnmount() {
+    if (this.refreshInterval) {
+      clearInterval(this.refreshInterval)
+    }
   },
   methods: {
     async fetchConversationDetails() {
-      this.loading = true
-      this.errorMsg = null
-
       try {
         const response = await this.$axios.get(`/conversation/${this.conversation.conversationId}`)
         this.messages = response.data.messages
         this.loading = false
       } catch (error) {
+        console.error('Fetch conversation error:', error)
         this.errorMsg = 'Failed to load conversation'
         this.loading = false
-        console.error(error)
       }
     },
     async sendMessage() {
-      if (!this.newMessage.trim() && !this.$refs.photoInput?.files[0]) {
+      if (!this.newMessage.trim()) {
         return
       }
 
       try {
-        const messageData = {
+        await this.$axios.post('/message', {
           conversationId: this.conversation.conversationId,
           text: this.newMessage
-        }
-
-        const response = await this.$axios.post('/message', messageData)
+        })
         
-        // Clear input after sending
         this.newMessage = ''
-        
-        // Refresh conversation
         await this.fetchConversationDetails()
       } catch (error) {
+        console.error('Send message error:', error)
         this.errorMsg = 'Failed to send message'
-        console.error(error)
       }
     },
     async handlePhotoUpload(event) {
@@ -249,18 +262,15 @@ export default {
         try {
           const base64Photo = e.target.result.split(',')[1]
           
-          const messageData = {
+          await this.$axios.post('/message', {
             conversationId: this.conversation.conversationId,
             photo: base64Photo
-          }
-
-          await this.$axios.post('/message', messageData)
+          })
           
-          // Refresh conversation
           await this.fetchConversationDetails()
         } catch (error) {
+          console.error('Upload photo error:', error)
           this.errorMsg = 'Failed to upload photo'
-          console.error(error)
         }
       }
       reader.readAsDataURL(file)
@@ -271,22 +281,31 @@ export default {
           conversationId: this.conversation.conversationId
         })
         
-        // Refresh conversation
         await this.fetchConversationDetails()
       } catch (error) {
+        console.error('Forward message error:', error)
         this.errorMsg = 'Failed to forward message'
-        console.error(error)
       }
     },
+    async forwardToUser(user) {
+  try {
+    await this.$axios.post(`/message/${this.messageToForward.messageId}/forward`, {
+      recipientId: user.id
+    })
+    this.showForwardModal = false
+    this.messageToForward = null
+  } catch (error) {
+    console.error('Forward to user error:', error)
+    this.errorMsg = 'Failed to forward message'
+  }
+},
     async deleteMessage(message) {
       try {
         await this.$axios.delete(`/message/${message.messageId}`)
-        
-        // Refresh conversation
         await this.fetchConversationDetails()
       } catch (error) {
+        console.error('Delete message error:', error)
         this.errorMsg = 'Failed to delete message'
-        console.error(error)
       }
     },
     showReactionModal(message) {
@@ -300,35 +319,30 @@ export default {
           emoji: emoji
         })
         
-        // Refresh conversation
         await this.fetchConversationDetails()
         
-        this.currentReactionMessage = null
+ this.currentReactionMessage = null
       } catch (error) {
+        console.error('Add reaction error:', error)
         this.errorMsg = 'Failed to add reaction'
-        console.error(error)
       }
     },
-    async removeReaction(message, reaction) {
+    async removeReaction(message) {
       try {
         await this.$axios.delete(`/message/${message.messageId}/uncomment`)
-        
-        // Refresh conversation
         await this.fetchConversationDetails()
       } catch (error) {
+        console.error('Remove reaction error:', error)
         this.errorMsg = 'Failed to remove reaction'
-        console.error(error)
       }
     },
     async leaveGroup() {
       try {
         await this.$axios.delete(`/group/${this.conversation.conversationId}/leave`)
-        
-        // Navigate back to conversations
-        this.$router.push('/')
+        this.$emit('refresh')
       } catch (error) {
+        console.error('Leave group error:', error)
         this.errorMsg = 'Failed to leave group'
-        console.error(error)
       }
     },
     async addMemberToGroup(user) {
@@ -337,18 +351,20 @@ export default {
           username: user.username
         })
         
-        // Close modal
         this.showAddMemberModal = false
-        
-        // Refresh conversation
         await this.fetchConversationDetails()
       } catch (error) {
+        console.error('Add member error:', error)
         this.errorMsg = 'Failed to add member to group'
-        console.error(error)
       }
     },
     formatDate(dateString) {
       return new Date(dateString).toLocaleString()
+    },
+    hasUserReacted(message) {
+      return message.comments?.some(
+        comment => comment.userId === this.currentUserId
+      )
     }
   }
 }
@@ -375,9 +391,24 @@ export default {
   background-color: #dcf8c6;
 }
 
+.message-text {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.message-status {
+  font-size: 0.8em;
+  color: #666;
+  margin-top: 2px;
+}
+
 .reactions .remove-reaction {
   cursor: pointer;
   margin-left: 5px;
   color: red;
+}
+
+.messages-container {
+  height: calc(100vh - 200px);
 }
 </style>
