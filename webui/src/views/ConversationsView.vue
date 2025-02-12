@@ -139,13 +139,21 @@ export default {
       return new Date(dateString).toLocaleString()
     },
     async startDirectConversation(user) {
+  // Prompt user for the first message
+  const firstMessage = prompt(`Send first message to ${user.username}:`, '')
+  
+  // Check if user cancelled or entered an empty message
+  if (firstMessage === null || firstMessage.trim() === '') {
+    return
+  }
+
   try {
     console.log('Starting conversation with user:', user)
     
-    // Send initial message
+    // Send initial message with user's input
     const response = await this.$axios.post('/message', {
-      text: "Hello!", // Add an initial message instead of empty text
-      recipientId: parseInt(user.id)
+      text: firstMessage,
+      recipientUsername: user.username
     })
     
     // Refresh conversations list
@@ -165,6 +173,7 @@ export default {
     this.errorMsg = 'Failed to start conversation: ' + (error.response?.data || error.message)
   }
 },
+
 
 
     onGroupCreated(group) {
