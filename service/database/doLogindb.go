@@ -45,13 +45,13 @@ func (db *appdbimpl) GetUsernameById(userId uint64) (string, error) {
 
 // User operations
 func (db *appdbimpl) GetRecipientIdByUsername(username string) (uint64, error) {
-    var userId uint64
-    err := db.c.QueryRow("SELECT Id FROM users WHERE Username = ?", username).Scan(&userId)
-    return userId, err
+	var userId uint64
+	err := db.c.QueryRow("SELECT Id FROM users WHERE Username = ?", username).Scan(&userId)
+	return userId, err
 }
 
 func (db *appdbimpl) GetConversationIdByName(name string) (int, error) {
-    var convId int
-    err := db.c.QueryRow("SELECT ConversationId FROM conversations WHERE Name = ?", name).Scan(&convId)
-    return convId, err
+	var convId int
+	err := db.c.QueryRow("SELECT ConversationId FROM conversations WHERE Name = ?", name).Scan(&convId)
+	return convId, err
 }

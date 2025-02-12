@@ -1,26 +1,26 @@
 package database
 
 import (
-    "fmt"
 	"database/sql"
-	"time"
+	"fmt"
 	"log"
+	"time"
 )
 
 func (db *appdbimpl) SetUserPhoto(userId uint64, photoData string) error {
-    _, err := db.c.Exec("UPDATE users SET ProfilePhoto = ? WHERE Id = ?", 
-        photoData, userId)
-    return err
+	_, err := db.c.Exec("UPDATE users SET ProfilePhoto = ? WHERE Id = ?",
+		photoData, userId)
+	return err
 }
 
 func (db *appdbimpl) SetGroupPhoto(groupId int, photoData string) error {
-    _, err := db.c.Exec("UPDATE conversations SET GroupPhoto = ? WHERE ConversationId = ? AND GroupId = 1", 
-        photoData, groupId)
-    return err
+	_, err := db.c.Exec("UPDATE conversations SET GroupPhoto = ? WHERE ConversationId = ? AND GroupId = 1",
+		photoData, groupId)
+	return err
 }
 
 func (db *appdbimpl) GetConversations(userId uint64) ([]ConversationPreview, error) {
-    query := `
+	query := `
         SELECT DISTINCT  -- Add DISTINCT to prevent duplicates
             c.ConversationId,
             CASE 
@@ -41,175 +41,190 @@ func (db *appdbimpl) GetConversations(userId uint64) ([]ConversationPreview, err
         GROUP BY c.ConversationId  -- Group by to avoid duplicates
         ORDER BY COALESCE(m.SendTime, '1970-01-01') DESC`
 
-    rows, err := db.c.Query(query, userId, userId)
-    if err != nil {
-        log.Printf("Query error: %v", err)
-        return nil, err
-    }
-    defer rows.Close()
+	rows, err := db.c.Query(query, userId, userId)
+	if err != nil {
+		log.Printf("Query error: %v", err)
+		return nil, err
+	}
+	defer rows.Close()
 
-    var conversations []ConversationPreview
-    for rows.Next() {
-        var conv ConversationPreview
-        var photoNull sql.NullString     
-        var textNull sql.NullString      
-        var timeNull sql.NullTime        
+	var conversations []ConversationPreview
+	for rows.Next() {
+		var conv ConversationPreview
+		var photoNull sql.NullString
+		var textNull sql.NullString
+		var timeNull sql.NullTime
 
-        err := rows.Scan(
-            &conv.ConversationId,
-            &conv.Name,
-            &photoNull,                  
-            &timeNull,                   
-            &textNull,                   
-            &conv.IsPhoto,
-            &conv.IsGroup,
-        )
-        if err != nil {
-            log.Printf("Scan error: %v", err)
-            return nil, err
-        }
+		err := rows.Scan(
+			&conv.ConversationId,
+			&conv.Name,
+			&photoNull,
+			&timeNull,
+			&textNull,
+			&conv.IsPhoto,
+			&conv.IsGroup,
+		)
+		if err != nil {
+			log.Printf("Scan error: %v", err)
+			return nil, err
+		}
 
-        if photoNull.Valid {
-            conv.Photo = photoNull.String
-        }
-        if textNull.Valid {
-            conv.LastMessageText = textNull.String
-        }
-        if timeNull.Valid {
-            conv.LastMessageTime = timeNull.Time
-        } else {
-            conv.LastMessageTime = time.Now()
-        }
+		if photoNull.Valid {
+			conv.Photo = photoNull.String
+		}
+		if textNull.Valid {
+			conv.LastMessageText = textNull.String
+		}
+		if timeNull.Valid {
+			conv.LastMessageTime = timeNull.Time
+		} else {
+			conv.LastMessageTime = time.Now()
+		}
 
-        conversations = append(conversations, conv)
-    }
+		conversations = append(conversations, conv)
+	}
 
-    return conversations, nil
+	return conversations, nil
 }
 
-
-
-
 func (db *appdbimpl) GetConversationDetails(convId int, userId uint64) (ConversationDetails, error) {
-    var conv ConversationDetails
+	log.Printf("Getting details for conversation %d", convId)
 
-    // Get conversation info
-    err := db.c.QueryRow(`
+	var conv ConversationDetails
+	var photoNull sql.NullString // For handling NULL photo
+
+	// Get conversation info
+	err := db.c.QueryRow(`
         SELECT 
             c.ConversationId,
             CASE 
                 WHEN c.GroupId = 1 THEN c.Name
-                ELSE u.Username
+                WHEN u.Username IS NOT NULL THEN u.Username
+                ELSE 'Unknown'
             END as Name,
-            CASE 
-                WHEN c.GroupId = 1 THEN c.GroupPhoto
-                ELSE u.ProfilePhoto
-            END as Photo,
+            c.GroupPhoto as Photo,
             c.GroupId = 1 as IsGroup
         FROM conversations c
         LEFT JOIN participants p ON c.ConversationId = p.ConversationId AND p.UserId != ?
-        LEFT JOIN users u ON c.GroupId = 0 AND u.Id = p.UserId
-        WHERE c.ConversationId = ?`, userId, convId).Scan(
-        &conv.ConversationId,
-        &conv.Name,
-        &conv.Photo,
-        &conv.IsGroup,
-    )
-    if err != nil {
-        return conv, err
-    }
+        LEFT JOIN users u ON p.UserId = u.Id
+        WHERE c.ConversationId = ?`,
+		userId, convId).Scan(
+		&conv.ConversationId,
+		&conv.Name,
+		&photoNull,
+		&conv.IsGroup,
+	)
+	if err != nil {
+		log.Printf("Error getting conversation info: %v", err)
+		return conv, err
+	}
 
-    // Get messages with comments
-    rows, err := db.c.Query(`
+	// Handle NULL photo
+	if photoNull.Valid {
+		conv.Photo = photoNull.String
+	}
+
+	// Get messages with sender info and comments
+	rows, err := db.c.Query(`
         SELECT 
             m.MessageId,
             m.Text,
             m.SendTime,
             m.Status,
             m.SenderId,
-            m.RecipientId,
             m.Photo,
-            u.Username as SenderUsername,
-            cm.UserId as CommentUserId,
-            cu.Username as CommentUsername,
-            cm.Emoji
+            u.Username as SenderUsername
         FROM messages m
         JOIN users u ON m.SenderId = u.Id
-        LEFT JOIN comments cm ON m.MessageId = cm.MessageId
-        LEFT JOIN users cu ON cm.UserId = cu.Id
         WHERE m.ConversationId = ?
         ORDER BY m.SendTime DESC`, convId)
-    if err != nil {
-        return conv, err
-    }
-    defer rows.Close()
+	if err != nil {
+		log.Printf("Error getting messages: %v", err)
+		return conv, err
+	}
+	defer rows.Close()
 
-    messageMap := make(map[int]*MessageWithComments)
-    for rows.Next() {
-        var msg MessageWithComments
-        var commentUserId *uint64
-        var commentUsername, emoji *string
+	for rows.Next() {
+		var msg MessageWithComments
+		var photoNull sql.NullString
+		err := rows.Scan(
+			&msg.MessageId,
+			&msg.Text,
+			&msg.SendTime,
+			&msg.Status,
+			&msg.SenderId,
+			&photoNull,
+			&msg.SenderUsername,
+		)
+		if err != nil {
+			log.Printf("Error scanning message: %v", err)
+			return conv, err
+		}
 
-        err := rows.Scan(
-            &msg.MessageId,
-            &msg.Text,
-            &msg.SendTime,
-            &msg.Status,
-            &msg.SenderId,
-            &msg.RecipientId,
-            &msg.Photo,
-            &msg.SenderUsername,
-            &commentUserId,
-            &commentUsername,
-            &emoji,
-        )
-        if err != nil {
-            return conv, err
-        }
+		if photoNull.Valid {
+			msg.Photo = photoNull.String
+		}
 
-        existing, exists := messageMap[msg.MessageId]
-        if !exists {
-            messageMap[msg.MessageId] = &msg
-            existing = &msg
-        }
+		// Get comments for this message
+		comments, err := db.getMessageComments(msg.MessageId)
+		if err != nil {
+			log.Printf("Error getting comments: %v", err)
+			return conv, err
+		}
+		msg.Comments = comments
 
-        if commentUserId != nil {
-            existing.Comments = append(existing.Comments, Comment{
-                UserId:   *commentUserId,
-                Username: *commentUsername,
-                Emoji:   *emoji,
-            })
-        }
-    }
+		conv.Messages = append(conv.Messages, msg)
+	}
 
-    for _, msg := range messageMap {
-        conv.Messages = append(conv.Messages, *msg)
-    }
+	return conv, nil
+}
 
-    return conv, nil
+func (db *appdbimpl) getMessageComments(messageId int) ([]Comment, error) {
+	rows, err := db.c.Query(`
+        SELECT 
+            c.UserId,
+            u.Username,
+            c.Emoji
+        FROM comments c
+        JOIN users u ON c.UserId = u.Id
+        WHERE c.MessageId = ?`, messageId)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var comments []Comment
+	for rows.Next() {
+		var comment Comment
+		err := rows.Scan(&comment.UserId, &comment.Username, &comment.Emoji)
+		if err != nil {
+			return nil, err
+		}
+		comments = append(comments, comment)
+	}
+	return comments, nil
 }
 
 func (db *appdbimpl) SearchUsers(query string) ([]User, error) {
-    rows, err := db.c.Query(`
+	rows, err := db.c.Query(`
         SELECT Id, Username, ProfilePhoto 
         FROM users 
         WHERE Username LIKE ?
-        ORDER BY Username`, 
-        fmt.Sprintf("%%%s%%", query))
-    if err != nil {
-        return nil, err
-    }
-    defer rows.Close()
+        ORDER BY Username`,
+		fmt.Sprintf("%%%s%%", query))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
 
-    var users []User
-    for rows.Next() {
-        var user User
-        err := rows.Scan(&user.Id, &user.Username, &user.ProfilePhoto)
-        if err != nil {
-            return nil, err
-        }
-        users = append(users, user)
-    }
-    return users, nil
+	var users []User
+	for rows.Next() {
+		var user User
+		err := rows.Scan(&user.Id, &user.Username, &user.ProfilePhoto)
+		if err != nil {
+			return nil, err
+		}
+		users = append(users, user)
+	}
+	return users, nil
 }
-

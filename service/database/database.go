@@ -41,8 +41,8 @@ import (
 var ErrUserDoesNotExist = errors.New("User does not exist")
 
 type User struct {
-	Id       uint64 `json:"id"`
-	Username string `json:"username"`
+	Id           uint64 `json:"id"`
+	Username     string `json:"username"`
 	ProfilePhoto string `json:"profilePhoto,omitempty"`
 }
 
@@ -58,42 +58,42 @@ type Message struct {
 }
 
 type Conversation struct {
-	ConversationId int `json:"conversationId"`
-	GroupId        int `json:"GroupId"`
-	LastMessageId  int `json:"lastMessageId"`
+	ConversationId int    `json:"conversationId"`
+	GroupId        int    `json:"GroupId"`
+	LastMessageId  int    `json:"lastMessageId"`
 	Name           string `json:"name"`
 }
 
 // New structs
 
 type ConversationPreview struct {
-    ConversationId   int       `json:"conversationId"`
-    Name            string    `json:"name"`
-    Photo           string    `json:"photo,omitempty"`
-    LastMessageTime time.Time `json:"lastMessageTime"`
-    LastMessageText string    `json:"lastMessageText"`
-    IsPhoto         bool      `json:"isPhoto"`
-    IsGroup         bool      `json:"isGroup"`
+	ConversationId  int       `json:"conversationId"`
+	Name            string    `json:"name"`
+	Photo           string    `json:"photo,omitempty"`
+	LastMessageTime time.Time `json:"lastMessageTime"`
+	LastMessageText string    `json:"lastMessageText"`
+	IsPhoto         bool      `json:"isPhoto"`
+	IsGroup         bool      `json:"isGroup"`
 }
 
 type ConversationDetails struct {
-    ConversationId int       `json:"conversationId"`
-    Name          string    `json:"name"`
-    Photo         string    `json:"photo,omitempty"`
-    IsGroup       bool      `json:"isGroup"`
-    Messages      []MessageWithComments `json:"messages"`
+	ConversationId int                   `json:"conversationId"`
+	Name           string                `json:"name"`
+	Photo          string                `json:"photo,omitempty"`
+	IsGroup        bool                  `json:"isGroup"`
+	Messages       []MessageWithComments `json:"messages"`
 }
 
 type MessageWithComments struct {
-    Message
-    SenderUsername string    `json:"senderUsername"`
-    Comments      []Comment `json:"comments"`
+	Message
+	SenderUsername string    `json:"senderUsername"`
+	Comments       []Comment `json:"comments"`
 }
 
 type Comment struct {
-    UserId    uint64 `json:"userId"`
-    Username  string `json:"username"`
-    Emoji     string `json:"emoji"`
+	UserId   uint64 `json:"userId"`
+	Username string `json:"username"`
+	Emoji    string `json:"emoji"`
 }
 
 // End of new structs
@@ -121,20 +121,19 @@ type AppDatabase interface {
 	GetRecipientIdByUsername(username string) (uint64, error)
 	// Leave group and set group name
 	LeaveGroup(userId uint64, groupId int) error
-    SetGroupName(groupId int, newName string) error
+	SetGroupName(groupId int, newName string) error
 	// Comments
 	ForwardMessage(messageId int, userId uint64, targetConvId int) (Message, error)
-    DeleteMessage(messageId int, userId uint64) error
-    CommentMessage(messageId int, userId uint64, emoji string) error
-    UncommentMessage(messageId int, userId uint64) error
-    IsMessageOwner(messageId int, userId uint64) (bool, error)
+	DeleteMessage(messageId int, userId uint64) error
+	CommentMessage(messageId int, userId uint64, emoji string) error
+	UncommentMessage(messageId int, userId uint64) error
+	IsMessageOwner(messageId int, userId uint64) (bool, error)
 	// Last functions
 	SetUserPhoto(userId uint64, photoData string) error
-    SetGroupPhoto(groupId int, photoData string) error
-    GetConversations(userId uint64) ([]ConversationPreview, error)
-    GetConversationDetails(convId int, userId uint64) (ConversationDetails, error)
-    SearchUsers(query string) ([]User, error)
-
+	SetGroupPhoto(groupId int, photoData string) error
+	GetConversations(userId uint64) ([]ConversationPreview, error)
+	GetConversationDetails(convId int, userId uint64) (ConversationDetails, error)
+	SearchUsers(query string) ([]User, error)
 
 	Ping() error
 }
@@ -211,7 +210,7 @@ func New(db *sql.DB) (AppDatabase, error) {
 			GroupPhoto TEXT,
 			FOREIGN KEY (LastMessageId) REFERENCES messages(MessageId)
 		);`
-				
+
 		_, err = db.Exec(conversationsDatabase)
 		if err != nil {
 			log.Fatalf("Error creating table: %v", err)
@@ -249,8 +248,8 @@ func New(db *sql.DB) (AppDatabase, error) {
 
 	err = db.QueryRow(`SELECT name FROM sqlite_master WHERE type='table' AND name='comments';`).Scan(&tableName)
 	if errors.Is(err, sql.ErrNoRows) {
-    log.Println("Creating 'comments' table...")
-    commentsDatabase := `CREATE TABLE comments (
+		log.Println("Creating 'comments' table...")
+		commentsDatabase := `CREATE TABLE comments (
         CommentId INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
         MessageId INTEGER NOT NULL,
         UserId INTEGER NOT NULL,
@@ -259,13 +258,13 @@ func New(db *sql.DB) (AppDatabase, error) {
         FOREIGN KEY (UserId) REFERENCES users(Id),
         UNIQUE(MessageId, UserId)
     );`
-    _, err = db.Exec(commentsDatabase)
-    if err != nil {
-        log.Fatalf("Error creating table: %v", err)
-    } else {
-        log.Println("'comments' table successfully created.")
-    }
-}
+		_, err = db.Exec(commentsDatabase)
+		if err != nil {
+			log.Fatalf("Error creating table: %v", err)
+		} else {
+			log.Println("'comments' table successfully created.")
+		}
+	}
 
 	return &appdbimpl{
 		c: db,
