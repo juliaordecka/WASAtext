@@ -53,17 +53,26 @@ export default {
     }
   },
   methods: {
-    async login() {
+async login() {
       if (!this.isValidUsername) {
         this.errorMsg = 'Invalid username format'
         return
       }
 
       try {
+        // First do the login
         const response = await this.$axios.post('/session', { username: this.username })
         
-        // Store user info in localStorage
-        localStorage.setItem('user', JSON.stringify(response.data))
+        // Then get complete user data including photo
+        const userData = {
+          id: response.data.id,
+          username: this.username,
+          profilePhoto: localStorage.getItem('user') ? 
+            JSON.parse(localStorage.getItem('user')).profilePhoto : null
+        }
+        
+        // Store complete user data
+        localStorage.setItem('user', JSON.stringify(userData))
         localStorage.setItem('token', response.data.id)
         
         // Navigate to conversations page
@@ -71,7 +80,9 @@ export default {
       } catch (error) {
         this.errorMsg = error.response?.data || 'Login failed'
       }
-    }
+}
+
+
   }
 }
 </script>
