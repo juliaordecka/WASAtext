@@ -3,6 +3,7 @@ package database
 import (
 	"database/sql"
 	"fmt"
+	"errors"
 )
 
 func (db *appdbimpl) CreateGroup(name string, creatorId uint64) (Conversation, error) {
@@ -17,7 +18,7 @@ func (db *appdbimpl) CreateGroup(name string, creatorId uint64) (Conversation, e
 	}()
 
 	// Create the conversation/group
-	result, err := tx.Exec("INSERT INTO conversations (GroupId, LastMessageId) VALUES (1, 0)")
+	result, err := tx.Exec("INSERT INTO conversations (GroupId, LastMessageId, Name) VALUES (1, 0, ?)", name)
 	if err != nil {
 		return Conversation{}, err
 	}
@@ -43,6 +44,7 @@ func (db *appdbimpl) CreateGroup(name string, creatorId uint64) (Conversation, e
 		ConversationId: int(conversationId),
 		GroupId:        1, // 1 indicates it's a group
 		LastMessageId:  0,
+		Name: 			name,
 	}, nil
 }
 
@@ -115,4 +117,38 @@ func (db *appdbimpl) DeleteGroup(groupId int) error {
 	}
 
 	return tx.Commit()
+}
+
+func (db *appdbimpl) LeaveGroup(userId uint64, groupId int) error {
+    result, err := db.c.Exec("DELETE FROM participants WHERE UserId = ? AND ConversationId = ?", 
+        userId, groupId)
+    if err != nil {
+        return err
+    }
+    
+    rows, err := result.RowsAffected()
+    if err != nil {
+        return err
+    }
+    if rows == 0 {
+        return errors.New("user not found in group")
+    }
+    return nil
+}
+
+func (db *appdbimpl) SetGroupName(groupId int, newName string) error {
+    result, err := db.c.Exec("UPDATE conversations SET Name = ? WHERE ConversationId = ? AND GroupId = 1", 
+        newName, groupId)
+    if err != nil {
+        return err
+    }
+    
+    rows, err := result.RowsAffected()
+    if err != nil {
+        return err
+    }
+    if rows == 0 {
+        return errors.New("group not found")
+    }
+    return nil
 }

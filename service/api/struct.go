@@ -34,6 +34,8 @@ type Message struct {
 	Status         string    `json:"status"`
 	SenderId       uint64    `json:"senderId"`
 	RecipientId    uint64    `json:"recipientId,omitempty"`
+	RecipientUsername string `json:"recipientUsername,omitempty"`
+    ConversationName string `json:"conversationName,omitempty"`
 	Photo          string    `json:"photo,omitempty"`
 }
 

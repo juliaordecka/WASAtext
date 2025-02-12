@@ -31,24 +31,56 @@ func (rt *_router) sendMessage(w http.ResponseWriter, r *http.Request, ps httpro
 		return
 	}
 
-	// Validate recipient
-	if message.RecipientId == 0 {
-		http.Error(w, "Recipient ID is required", http.StatusBadRequest)
+ // Handle conversation lookup by name
+ if message.ConversationName != "" {
+	convId, err := rt.db.GetConversationIdByName(message.ConversationName)
+	if err != nil {
+		http.Error(w, "Conversation not found", http.StatusNotFound)
 		return
 	}
+	message.ConversationId = convId
+}
 
-	// Get or create conversation with recipient
-	conversationId, err := rt.db.GetOrCreateDirectConversation(user.Id, message.RecipientId)
+// Handle recipient lookup by username
+if message.RecipientUsername != "" {
+	recipientId, err := rt.db.GetRecipientIdByUsername(message.RecipientUsername)
+	if err != nil {
+		http.Error(w, "Recipient not found", http.StatusNotFound)
+		return
+	}
+	message.RecipientId = recipientId
+}
+
+// Check if it's a group message or direct message
+if message.ConversationId != 0 {
+	// It's a message to an existing conversation (group or direct)
+	isParticipant, err := rt.db.IsUserInGroup(user.Id, message.ConversationId)
+	if err != nil {
+		http.Error(w, "Database error", http.StatusInternalServerError)
+		return
+	}
+	if !isParticipant {
+		http.Error(w, "Not authorized to send message to this conversation", http.StatusForbidden)
+		return
+	}
+} else if message.RecipientId != 0 {
+	// It's a new direct message
+	newConvId, err := rt.db.GetOrCreateDirectConversation(user.Id, message.RecipientId)
 	if err != nil {
 		http.Error(w, "Failed to handle conversation", http.StatusInternalServerError)
 		return
 	}
+	message.ConversationId = newConvId
+} else {
+	http.Error(w, "Must specify either conversation name/id or recipient username/id", http.StatusBadRequest)
+	return
+}
+
 
 	// Set message metadata
-	message.SenderId = user.Id
-	message.ConversationId = conversationId
-	message.SendTime = time.Now()
-	message.Status = "Sent"
+    message.SenderId = user.Id
+    message.SendTime = time.Now()
+    message.Status = "Sent"
 
 	// Store message in database
 	dbMsg := message.ToDatabase()

@@ -60,6 +60,7 @@ type Conversation struct {
 	ConversationId int `json:"conversationId"`
 	GroupId        int `json:"GroupId"`
 	LastMessageId  int `json:"lastMessageId"`
+	Name           string `json:"name"`
 }
 
 // AppDatabase is the high level interface for the DB
@@ -80,6 +81,13 @@ type AppDatabase interface {
 	GetUserIdByUsername(username string) (uint64, error)
 	IsUserInGroup(userId uint64, groupId int) (bool, error)
 	DeleteGroup(groupId int) error
+	// Messaging to groups
+	GetConversationIdByName(name string) (int, error)
+	GetRecipientIdByUsername(username string) (uint64, error)
+	// Leave group and set group name
+	LeaveGroup(userId uint64, groupId int) error
+    SetGroupName(groupId int, newName string) error
+	
 	Ping() error
 }
 
@@ -147,11 +155,13 @@ func New(db *sql.DB) (AppDatabase, error) {
 	if errors.Is(err, sql.ErrNoRows) {
 		log.Println("Creating 'conversations' table...")
 		conversationsDatabase := `CREATE TABLE conversations (
-            ConversationId INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-            GroupId INTEGER NOT NULL,
-            LastMessageId INTEGER,
-            FOREIGN KEY (LastMessageId) REFERENCES messages(MessageId)
-        );`
+			ConversationId INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+			GroupId INTEGER NOT NULL,
+			LastMessageId INTEGER,
+			Name TEXT,
+			FOREIGN KEY (LastMessageId) REFERENCES messages(MessageId)
+		);`
+				
 		_, err = db.Exec(conversationsDatabase)
 		if err != nil {
 			log.Fatalf("Error creating table: %v", err)

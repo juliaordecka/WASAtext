@@ -13,7 +13,7 @@ func (rt *_router) Handler() http.Handler {
 	rt.router.POST("/session", rt.wrap(rt.doLogin))
 	rt.router.PUT("/user/:username/setmyusername", rt.wrap(rt.setMyUsername))
 	//    rt.router.PUT("/user/:username/photo", rt.wrap(rt.setMyPhoto))
-	//rt.router.GET("/conversations", rt.wrap(rt.getMyConversations))
+	//	rt.router.GET("/conversations", rt.wrap(rt.getMyConversations))
 	//    rt.router.GET("/conversation/:conversation_id", rt.wrap(rt.getConversation))
 	rt.router.POST("/message", rt.wrap(rt.sendMessage))
 	//    rt.router.POST("/message/:message_id/forward", rt.wrap(rt.forwardMessage))
@@ -22,8 +22,8 @@ func (rt *_router) Handler() http.Handler {
 	//    rt.router.DELETE("/message/:message_id", rt.wrap(rt.deleteMessage))
 	rt.router.POST("/group", rt.wrap(rt.createGroup))
 	rt.router.POST("/group/:group_id/add", rt.wrap(rt.addToGroup))
-	//    rt.router.DELETE("/group/:group_id/leave", rt.wrap(rt.leaveGroup))
-	//    rt.router.PUT("/group/:group_id/name", rt.wrap(rt.setGroupName))
+	rt.router.DELETE("/group/:group_id/leave", rt.wrap(rt.leaveGroup))
+	rt.router.PUT("/group/:group_id/name", rt.wrap(rt.setGroupName))
 	//    rt.router.PUT("/group/:group_id/photo", rt.wrap(rt.setGroupPhoto))
 
 	// Special routes
