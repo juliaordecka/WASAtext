@@ -10,17 +10,20 @@ import (
 type User struct {
 	Id       uint64 `json:"id"`
 	Username string `json:"username"`
+	ProfilePhoto string `json:"profilePhoto,omitempty"`
 }
 
 func (u *User) FromDatabase(user database.User) {
 	u.Id = user.Id
 	u.Username = user.Username
+	u.ProfilePhoto = user.ProfilePhoto
 }
 
 func (u *User) ToDatabase() database.User {
 	return database.User{
 		Id:       u.Id,
 		Username: u.Username,
+		ProfilePhoto: u.ProfilePhoto,
 	}
 }
 
@@ -79,4 +82,34 @@ type Conversation struct {
 	Name           string `json:"name,omitempty"`
 	Participants   []User `json:"participants,omitempty"`
 	IsGroup        bool   `json:"isGroup"`
+}
+
+type ConversationPreview struct {
+    ConversationId   int       `json:"conversationId"`
+    Name            string    `json:"name"`
+    Photo           string    `json:"photo,omitempty"`
+    LastMessageTime time.Time `json:"lastMessageTime"`
+    LastMessageText string    `json:"lastMessageText"`
+    IsPhoto         bool      `json:"isPhoto"`
+    IsGroup         bool      `json:"isGroup"`
+}
+
+type ConversationDetails struct {
+    ConversationId int       `json:"conversationId"`
+    Name          string    `json:"name"`
+    Photo         string    `json:"photo,omitempty"`
+    IsGroup       bool      `json:"isGroup"`
+    Messages      []MessageWithComments `json:"messages"`
+}
+
+type MessageWithComments struct {
+    Message
+    SenderUsername string    `json:"senderUsername"`
+    Comments      []Comment `json:"comments"`
+}
+
+type Comment struct {
+    UserId    uint64 `json:"userId"`
+    Username  string `json:"username"`
+    Emoji     string `json:"emoji"`
 }

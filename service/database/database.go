@@ -43,6 +43,7 @@ var ErrUserDoesNotExist = errors.New("User does not exist")
 type User struct {
 	Id       uint64 `json:"id"`
 	Username string `json:"username"`
+	ProfilePhoto string `json:"profilePhoto,omitempty"`
 }
 
 type Message struct {
@@ -62,6 +63,40 @@ type Conversation struct {
 	LastMessageId  int `json:"lastMessageId"`
 	Name           string `json:"name"`
 }
+
+// New structs
+
+type ConversationPreview struct {
+    ConversationId   int       `json:"conversationId"`
+    Name            string    `json:"name"`
+    Photo           string    `json:"photo,omitempty"`
+    LastMessageTime time.Time `json:"lastMessageTime"`
+    LastMessageText string    `json:"lastMessageText"`
+    IsPhoto         bool      `json:"isPhoto"`
+    IsGroup         bool      `json:"isGroup"`
+}
+
+type ConversationDetails struct {
+    ConversationId int       `json:"conversationId"`
+    Name          string    `json:"name"`
+    Photo         string    `json:"photo,omitempty"`
+    IsGroup       bool      `json:"isGroup"`
+    Messages      []MessageWithComments `json:"messages"`
+}
+
+type MessageWithComments struct {
+    Message
+    SenderUsername string    `json:"senderUsername"`
+    Comments      []Comment `json:"comments"`
+}
+
+type Comment struct {
+    UserId    uint64 `json:"userId"`
+    Username  string `json:"username"`
+    Emoji     string `json:"emoji"`
+}
+
+// End of new structs
 
 // AppDatabase is the high level interface for the DB
 type AppDatabase interface {
@@ -93,6 +128,12 @@ type AppDatabase interface {
     CommentMessage(messageId int, userId uint64, emoji string) error
     UncommentMessage(messageId int, userId uint64) error
     IsMessageOwner(messageId int, userId uint64) (bool, error)
+	// Last functions
+	SetUserPhoto(userId uint64, photoData string) error
+    SetGroupPhoto(groupId int, photoData string) error
+    GetConversations(userId uint64) ([]ConversationPreview, error)
+    GetConversationDetails(convId int, userId uint64) (ConversationDetails, error)
+    SearchUsers(query string) ([]User, error)
 
 
 	Ping() error
@@ -166,6 +207,7 @@ func New(db *sql.DB) (AppDatabase, error) {
 			GroupId INTEGER NOT NULL,
 			LastMessageId INTEGER,
 			Name TEXT,
+			GroupPhoto TEXT,
 			FOREIGN KEY (LastMessageId) REFERENCES messages(MessageId)
 		);`
 				

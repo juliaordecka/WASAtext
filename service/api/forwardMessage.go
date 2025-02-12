@@ -51,6 +51,9 @@ func (rt *_router) forwardMessage(w http.ResponseWriter, r *http.Request, ps htt
     }
 
     w.Header().Set("Content-Type", "application/json")
-    json.NewEncoder(w).Encode(forwardedMsg)
+if err := json.NewEncoder(w).Encode(forwardedMsg); err != nil {
+    http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+    return
+}
 }
 
