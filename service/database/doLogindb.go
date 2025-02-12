@@ -36,3 +36,9 @@ func (db *appdbimpl) SetUsername(u User, username string) (User, error) {
 	}
 	return u, nil
 }
+
+func (db *appdbimpl) GetUsernameById(userId uint64) (string, error) {
+	var username string
+	err := db.c.QueryRow("SELECT Username FROM users WHERE Id = ?", userId).Scan(&username)
+	return username, err
+}
