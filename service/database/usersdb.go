@@ -2,7 +2,6 @@ package database
 
 import (
 	"database/sql"
-	"fmt"
 	"log"
 	"time"
 )
@@ -206,25 +205,35 @@ func (db *appdbimpl) getMessageComments(messageId int) ([]Comment, error) {
 }
 
 func (db *appdbimpl) SearchUsers(query string) ([]User, error) {
-	rows, err := db.c.Query(`
-        SELECT Id, Username, ProfilePhoto 
+    log.Printf("SearchUsers called with query: %s", query)
+
+    // Use LIKE with wildcards for partial matching
+    searchQuery := `
+        SELECT Id, Username 
         FROM users 
         WHERE Username LIKE ?
-        ORDER BY Username`,
-		fmt.Sprintf("%%%s%%", query))
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
+        ORDER BY Username`
+    
+    log.Printf("Executing query: %s", searchQuery)
+    rows, err := db.c.Query(searchQuery, "%" + query + "%")
+    if err != nil {
+        log.Printf("Error executing query: %v", err)
+        return nil, err
+    }
+    defer rows.Close()
 
-	var users []User
-	for rows.Next() {
-		var user User
-		err := rows.Scan(&user.Id, &user.Username, &user.ProfilePhoto)
-		if err != nil {
-			return nil, err
-		}
-		users = append(users, user)
-	}
-	return users, nil
+    var users []User
+    for rows.Next() {
+        var user User
+        err := rows.Scan(&user.Id, &user.Username)
+        if err != nil {
+            log.Printf("Error scanning row: %v", err)
+            return nil, err
+        }
+        log.Printf("Found user: %+v", user)
+        users = append(users, user)
+    }
+
+    log.Printf("Total users found: %d", len(users))
+    return users, nil
 }
