@@ -225,16 +225,27 @@ export default {
   },
   methods: {
     async fetchConversationDetails() {
-      try {
-        const response = await this.$axios.get(`/conversation/${this.conversation.conversationId}`)
-        this.messages = response.data.messages
-        this.loading = false
-      } catch (error) {
-        console.error('Fetch conversation error:', error)
-        this.errorMsg = 'Failed to load conversation'
-        this.loading = false
-      }
-    },
+  // Reset messages before fetching
+  this.messages = []
+  this.loading = true
+  this.errorMsg = null
+
+  try {
+    const response = await this.$axios.get(`/conversation/${this.conversation.conversationId}`)
+    
+    // Only update if we're still on the same conversation
+    if (this.conversation.conversationId === response.data.conversationId) {
+      // Explicitly set messages, even if it's an empty array
+      this.messages = response.data.messages || []
+      this.loading = false
+    }
+  } catch (error) {
+    console.error('Fetch conversation error:', error)
+    this.errorMsg = 'Failed to load conversation'
+    this.messages = [] // Ensure messages are cleared on error
+    this.loading = false
+  }
+},
     async sendMessage() {
       if (!this.newMessage.trim()) {
         return
