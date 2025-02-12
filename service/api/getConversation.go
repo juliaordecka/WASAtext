@@ -46,8 +46,8 @@ func (rt *_router) getConversation(w http.ResponseWriter, r *http.Request, ps ht
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-if err := json.NewEncoder(w).Encode(conversation); err != nil {
-    rt.baseLogger.Printf("Error encoding conversation: %v", err)
-    http.Error(w, "Failed to encode response", http.StatusInternalServerError)
-}
+	if err := json.NewEncoder(w).Encode(conversation); err != nil {
+		rt.baseLogger.Printf("Error encoding conversation: %v", err)
+		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+	}
 }
