@@ -205,35 +205,35 @@ func (db *appdbimpl) getMessageComments(messageId int) ([]Comment, error) {
 }
 
 func (db *appdbimpl) SearchUsers(query string) ([]User, error) {
-    log.Printf("SearchUsers called with query: %s", query)
+	log.Printf("SearchUsers called with query: %s", query)
 
-    // Use LIKE with wildcards for partial matching
-    searchQuery := `
+	// Use LIKE with wildcards for partial matching
+	searchQuery := `
         SELECT Id, Username 
         FROM users 
         WHERE Username LIKE ?
         ORDER BY Username`
-    
-    log.Printf("Executing query: %s", searchQuery)
-    rows, err := db.c.Query(searchQuery, "%" + query + "%")
-    if err != nil {
-        log.Printf("Error executing query: %v", err)
-        return nil, err
-    }
-    defer rows.Close()
 
-    var users []User
-    for rows.Next() {
-        var user User
-        err := rows.Scan(&user.Id, &user.Username)
-        if err != nil {
-            log.Printf("Error scanning row: %v", err)
-            return nil, err
-        }
-        log.Printf("Found user: %+v", user)
-        users = append(users, user)
-    }
+	log.Printf("Executing query: %s", searchQuery)
+	rows, err := db.c.Query(searchQuery, "%"+query+"%")
+	if err != nil {
+		log.Printf("Error executing query: %v", err)
+		return nil, err
+	}
+	defer rows.Close()
 
-    log.Printf("Total users found: %d", len(users))
-    return users, nil
+	var users []User
+	for rows.Next() {
+		var user User
+		err := rows.Scan(&user.Id, &user.Username)
+		if err != nil {
+			log.Printf("Error scanning row: %v", err)
+			return nil, err
+		}
+		log.Printf("Found user: %+v", user)
+		users = append(users, user)
+	}
+
+	log.Printf("Total users found: %d", len(users))
+	return users, nil
 }

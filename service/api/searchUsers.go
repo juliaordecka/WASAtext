@@ -8,29 +8,27 @@ import (
 )
 
 func (rt *_router) searchUsers(w http.ResponseWriter, r *http.Request, ps httprouter.Params, ctx reqcontext.RequestContext) {
-    rt.baseLogger.Println("searchUsers endpoint called")
+	rt.baseLogger.Println("searchUsers endpoint called")
 
-    // Get query parameter
-    query := r.URL.Query().Get("username")
-    rt.baseLogger.Printf("Search query: %s", query)
-    
-    if query == "" {
-        rt.baseLogger.Println("Empty search query")
-        http.Error(w, "Search query required", http.StatusBadRequest)
-        return
-    }
+	// Get query parameter
+	query := r.URL.Query().Get("username")
+	rt.baseLogger.Printf("Search query: %s", query)
 
-    rt.baseLogger.Printf("Calling database SearchUsers with query: %s", query)
-    users, err := rt.db.SearchUsers(query)
-    if err != nil {
-        rt.baseLogger.Printf("Database error in SearchUsers: %v", err)
-        http.Error(w, "Failed to search users", http.StatusInternalServerError)
-        return
-    }
+	if query == "" {
+		rt.baseLogger.Println("Empty search query")
+		http.Error(w, "Search query required", http.StatusBadRequest)
+		return
+	}
 
-    rt.baseLogger.Printf("Found %d users", len(users))
-    w.Header().Set("Content-Type", "application/json")
-    json.NewEncoder(w).Encode(users)
+	rt.baseLogger.Printf("Calling database SearchUsers with query: %s", query)
+	users, err := rt.db.SearchUsers(query)
+	if err != nil {
+		rt.baseLogger.Printf("Database error in SearchUsers: %v", err)
+		http.Error(w, "Failed to search users", http.StatusInternalServerError)
+		return
+	}
+
+	rt.baseLogger.Printf("Found %d users", len(users))
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(users)
 }
-
-

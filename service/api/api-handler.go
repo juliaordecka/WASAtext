@@ -5,6 +5,7 @@ import (
 )
 
 // Handler returns an instance of httprouter.Router that handle APIs registered here
+// Test comment
 func (rt *_router) Handler() http.Handler {
 	// Register routes
 	// rt.router.GET("/", rt.getHelloWorld)
