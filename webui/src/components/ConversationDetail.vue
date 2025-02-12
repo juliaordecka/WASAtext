@@ -208,12 +208,12 @@ export default {
     }
   },
   computed: {
-    sortedMessages() {
-      return [...this.messages].sort((a, b) => 
-        new Date(b.sendTime) - new Date(a.sendTime)
-      )
-    }
-  },
+  sortedMessages() {
+    return [...this.messages].sort((a, b) => 
+      new Date(a.sendTime) - new Date(b.sendTime)
+    )
+  }
+},
   mounted() {
     this.fetchConversationDetails()
     this.refreshInterval = setInterval(this.fetchConversationDetails, 5000)
