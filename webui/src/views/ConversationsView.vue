@@ -140,7 +140,7 @@ export default {
     },
     async startDirectConversation(user) {
   // Prompt user for the first message
-  const firstMessage = prompt(`Send first message to ${user.username}:`, '')
+  const firstMessage = prompt(`Send message to ${user.username}:`, '')
   
   // Check if user cancelled or entered an empty message
   if (firstMessage === null || firstMessage.trim() === '') {
