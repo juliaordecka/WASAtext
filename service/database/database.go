@@ -87,7 +87,14 @@ type AppDatabase interface {
 	// Leave group and set group name
 	LeaveGroup(userId uint64, groupId int) error
     SetGroupName(groupId int, newName string) error
-	
+	// Comments
+	ForwardMessage(messageId int, userId uint64, targetConvId int) (Message, error)
+    DeleteMessage(messageId int, userId uint64) error
+    CommentMessage(messageId int, userId uint64, emoji string) error
+    UncommentMessage(messageId int, userId uint64) error
+    IsMessageOwner(messageId int, userId uint64) (bool, error)
+
+
 	Ping() error
 }
 
@@ -196,6 +203,26 @@ func New(db *sql.DB) (AppDatabase, error) {
 	} else {
 		log.Println("'participants' table already exists.")
 	}
+
+	err = db.QueryRow(`SELECT name FROM sqlite_master WHERE type='table' AND name='comments';`).Scan(&tableName)
+	if errors.Is(err, sql.ErrNoRows) {
+    log.Println("Creating 'comments' table...")
+    commentsDatabase := `CREATE TABLE comments (
+        CommentId INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+        MessageId INTEGER NOT NULL,
+        UserId INTEGER NOT NULL,
+        Emoji TEXT NOT NULL,
+        FOREIGN KEY (MessageId) REFERENCES messages(MessageId),
+        FOREIGN KEY (UserId) REFERENCES users(Id),
+        UNIQUE(MessageId, UserId)
+    );`
+    _, err = db.Exec(commentsDatabase)
+    if err != nil {
+        log.Fatalf("Error creating table: %v", err)
+    } else {
+        log.Println("'comments' table successfully created.")
+    }
+}
 
 	return &appdbimpl{
 		c: db,
