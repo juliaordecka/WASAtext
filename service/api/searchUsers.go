@@ -30,5 +30,8 @@ func (rt *_router) searchUsers(w http.ResponseWriter, r *http.Request, ps httpro
 
 	rt.baseLogger.Printf("Found %d users", len(users))
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(users)
+if err := json.NewEncoder(w).Encode(users); err != nil {
+    rt.baseLogger.Printf("Error encoding users: %v", err)
+    http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+}
 }
