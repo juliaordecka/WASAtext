@@ -149,7 +149,7 @@
 						<div
 							class="message-actions mt-2 d-flex justify-content-between"
 						>
-							<div v-if="message.senderId === currentUserId">
+							<div>
 								<button
 									class="btn btn-sm btn-outline-secondary me-2"
 									@click="forwardMessage(message)"
@@ -157,6 +157,7 @@
 									Forward
 								</button>
 								<button
+									v-if="message.senderId === currentUserId"
 									class="btn btn-sm btn-outline-danger"
 									@click="deleteMessage(message)"
 								>
@@ -477,7 +478,9 @@ export default {
 			} catch (error) {
 				console.error("Forward message error:", error);
 				this.errorMsg = `Failed to forward message: ${
-					(error.response && error.response.data) ? error.response.data : error.message
+					error.response && error.response.data
+						? error.response.data
+						: error.message
 				}`;
 			}
 		},
@@ -608,8 +611,11 @@ export default {
 			return new Date(dateString).toLocaleString();
 		},
 		hasUserReacted(message) {
-			return message.comments && message.comments.some(
-				(comment) => comment.userId === this.currentUserId
+			return (
+				message.comments &&
+				message.comments.some(
+					(comment) => comment.userId === this.currentUserId
+				)
 			);
 		},
 	},
