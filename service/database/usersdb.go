@@ -83,6 +83,11 @@ func (db *appdbimpl) GetConversations(userId uint64) ([]ConversationPreview, err
 		conversations = append(conversations, conv)
 	}
 
+	if err = rows.Err(); err != nil {
+		log.Printf("Rows error: %v", err)
+		return nil, err
+	}
+
 	return conversations, nil
 }
 
@@ -175,6 +180,11 @@ func (db *appdbimpl) GetConversationDetails(convId int, userId uint64) (Conversa
 		conv.Messages = append(conv.Messages, msg)
 	}
 
+	if err = rows.Err(); err != nil {
+		log.Printf("Rows error in messages: %v", err)
+		return conv, err
+	}
+
 	return conv, nil
 }
 
@@ -201,6 +211,12 @@ func (db *appdbimpl) getMessageComments(messageId int) ([]Comment, error) {
 		}
 		comments = append(comments, comment)
 	}
+
+	if err = rows.Err(); err != nil {
+		log.Printf("Rows error in comments: %v", err)
+		return nil, err
+	}
+
 	return comments, nil
 }
 
@@ -232,6 +248,11 @@ func (db *appdbimpl) SearchUsers(query string) ([]User, error) {
 		}
 		log.Printf("Found user: %+v", user)
 		users = append(users, user)
+	}
+
+	if err = rows.Err(); err != nil {
+		log.Printf("Rows error: %v", err)
+		return nil, err
 	}
 
 	log.Printf("Total users found: %d", len(users))

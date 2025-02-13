@@ -3,28 +3,22 @@
     <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3 fs-6" href="#/">WASAText</a>
     <div class="navbar-nav">
       <div class="nav-item text-nowrap" v-if="isLoggedIn">
-        <div class="dropdown">
-          <button 
-            class="btn btn-dark dropdown-toggle" 
-            type="button" 
-            id="userDropdown" 
-            data-bs-toggle="dropdown" 
-            aria-expanded="false"
-          >
-            {{ username }}
-          </button>
-          <ul class="dropdown-menu" aria-labelledby="userDropdown">
-            <li>
-              <RouterLink to="/profile" class="dropdown-item">
-                Profile
-              </RouterLink>
-            </li>
-            <li>
-              <a class="dropdown-item" href="#" @click.prevent="logout">
-                Logout
-              </a>
-            </li>
-          </ul>
+        <div class="d-flex align-items-center">
+          <span class="text-white me-3">{{ currentUsername }}</span>
+          <div class="btn-group">
+            <RouterLink 
+              to="/profile" 
+              class="btn btn-sm btn-outline-light me-2"
+            >
+              Profile
+            </RouterLink>
+            <button 
+              class="btn btn-sm btn-outline-danger" 
+              @click="logout"
+            >
+              Logout
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -54,18 +48,18 @@
 </template>
 
 <script>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { RouterLink, RouterView } from 'vue-router'
 
 export default {
   setup() {
     const router = useRouter()
-    const username = ref('')
+    const currentUsername = ref('')
     
     const updateUsername = () => {
       const user = JSON.parse(localStorage.getItem('user'))
-      username.value = user?.username || ''
+      currentUsername.value = user?.username || ''
     }
 
     const isLoggedIn = computed(() => {
@@ -75,7 +69,7 @@ export default {
     const logout = () => {
       localStorage.removeItem('token')
       localStorage.removeItem('user')
-      username.value = ''
+      currentUsername.value = ''
       router.push('/login')
     }
 
@@ -85,6 +79,15 @@ export default {
         updateUsername()
       }
     }
+
+    // Watch for route changes and update username
+    watch(
+      () => router.currentRoute.value,
+      () => {
+        updateUsername()
+      },
+      { immediate: true }
+    )
 
     onMounted(() => {
       updateUsername()
@@ -96,7 +99,7 @@ export default {
     })
 
     return {
-      username,
+      currentUsername,
       isLoggedIn,
       logout
     }

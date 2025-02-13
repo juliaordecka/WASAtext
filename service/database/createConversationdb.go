@@ -2,7 +2,9 @@ package database
 
 import (
 	"database/sql"
-	"fmt"
+	//	"fmt"
+	"errors"
+	"log"
 )
 
 func (db *appdbimpl) CreateConversation(userId uint64, conversationId int) (Conversation, error) {
@@ -60,8 +62,8 @@ func (db *appdbimpl) GetOrCreateDirectConversation(userId, recipientId uint64) (
 		return 0, err
 	}
 	defer func() {
-		if err := tx.Rollback(); err != nil && err != sql.ErrTxDone {
-			fmt.Printf("Transaction rollback failed: %v\n", err)
+		if err := tx.Rollback(); err != nil && !errors.Is(err, sql.ErrTxDone) {
+			log.Printf("Transaction rollback failed: %v\n", err)
 		}
 	}()
 

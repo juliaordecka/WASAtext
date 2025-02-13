@@ -27,5 +27,12 @@ func (rt *_router) setMyUsername(w http.ResponseWriter, r *http.Request, ps http
 	user.FromDatabase(dbuser)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	_ = json.NewEncoder(w).Encode(user)
+
+	if err := json.NewEncoder(w).Encode(user); err != nil {
+		// Log the encoding error or handle it appropriately
+		rt.baseLogger.Printf("Failed to encode user: %v", err)
+		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+		return
+	}
+
 }

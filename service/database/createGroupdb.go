@@ -3,7 +3,8 @@ package database
 import (
 	"database/sql"
 	"errors"
-	"fmt"
+	//	"fmt"
+	"log"
 )
 
 func (db *appdbimpl) CreateGroup(name string, creatorId uint64) (Conversation, error) {
@@ -12,8 +13,8 @@ func (db *appdbimpl) CreateGroup(name string, creatorId uint64) (Conversation, e
 		return Conversation{}, err
 	}
 	defer func() {
-		if err := tx.Rollback(); err != nil && err != sql.ErrTxDone {
-			fmt.Printf("Transaction rollback failed: %v\n", err)
+		if err := tx.Rollback(); err != nil && !errors.Is(err, sql.ErrTxDone) {
+			log.Printf("Transaction rollback failed: %v\n", err)
 		}
 	}()
 
@@ -99,8 +100,8 @@ func (db *appdbimpl) DeleteGroup(groupId int) error {
 		return err
 	}
 	defer func() {
-		if err := tx.Rollback(); err != nil && err != sql.ErrTxDone {
-			fmt.Printf("Transaction rollback failed: %v\n", err)
+		if err := tx.Rollback(); err != nil && !errors.Is(err, sql.ErrTxDone) {
+			log.Printf("Transaction rollback failed: %v\n", err)
 		}
 	}()
 
