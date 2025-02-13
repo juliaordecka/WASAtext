@@ -246,6 +246,13 @@
 			@close="showAddMemberModal = false"
 			@start-conversation="addMemberToGroup"
 		/>
+
+		<!-- Add this new modal for forwarding -->
+		<UserSearchModal
+			v-if="showForwardModal"
+			@close="showForwardModal = false"
+			@start-conversation="handleForward"
+		/>
 	</div>
 </template>
 
@@ -277,6 +284,8 @@ export default {
 			showGroupPhotoInput: false,
 			showGroupNameInput: false,
 			newGroupName: "",
+			showForwardModal: false,
+			messageToForward: null,
 		};
 	},
 	computed: {
@@ -394,36 +403,28 @@ export default {
 			reader.readAsDataURL(file);
 		},
 
-		async forwardMessage(message) {
+		forwardMessage(message) {
+			this.messageToForward = message;
+			this.showForwardModal = true; // Show user selection modal
+		},
+
+		async handleForward(recipient) {
 			try {
 				await this.$axios.post(
-					`/message/${message.messageId}/forward`,
+					`/message/${this.messageToForward.messageId}/forward`,
 					{
-						conversationId: this.conversation.conversationId,
+						recipientId: recipient.id,
 					}
 				);
-
+				this.showForwardModal = false;
+				this.messageToForward = null;
 				await this.fetchConversationDetails();
 			} catch (error) {
 				console.error("Forward message error:", error);
 				this.errorMsg = "Failed to forward message";
 			}
 		},
-		async forwardToUser(user) {
-			try {
-				await this.$axios.post(
-					`/message/${this.messageToForward.messageId}/forward`,
-					{
-						recipientId: user.id,
-					}
-				);
-				this.showForwardModal = false;
-				this.messageToForward = null;
-			} catch (error) {
-				console.error("Forward to user error:", error);
-				this.errorMsg = "Failed to forward message";
-			}
-		},
+
 		async deleteMessage(message) {
 			try {
 				await this.$axios.delete(`/message/${message.messageId}`);
