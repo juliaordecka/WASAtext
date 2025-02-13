@@ -379,7 +379,9 @@ export default {
 						error.response || error
 					);
 					this.errorMsg = `Failed to upload photo: ${
-						error.response?.data || error.message
+						error.response && error.response.data
+							? error.response.data
+							: error.message
 					}`;
 				}
 			};

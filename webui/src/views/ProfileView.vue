@@ -91,7 +91,9 @@ export default {
 				this.newUsername = "";
 			} catch (error) {
 				this.errorMsg =
-					error.response?.data || "Failed to update username";
+					error.response && error.response.data
+						? error.response.data
+						: "Failed to update username";
 				this.successMsg = null;
 			}
 		},

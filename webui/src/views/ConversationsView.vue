@@ -188,7 +188,9 @@ export default {
 				);
 				this.errorMsg =
 					"Failed to start conversation: " +
-					(error.response?.data || error.message);
+					(error.response && error.response.data)
+						? error.response.data
+						: error.message;
 			}
 		},
 

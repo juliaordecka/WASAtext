@@ -80,7 +80,10 @@ export default {
 				// Navigate to conversations page
 				this.$router.replace("/conversations");
 			} catch (error) {
-				this.errorMsg = error.response?.data || "Login failed";
+				this.errorMsg =
+					error.response && error.response.data
+						? error.response.data
+						: "Login failed";
 			}
 		},
 	},
