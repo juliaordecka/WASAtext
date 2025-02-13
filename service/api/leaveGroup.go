@@ -7,6 +7,8 @@ import (
 	"strconv"
 )
 
+// Test
+
 func (rt *_router) leaveGroup(w http.ResponseWriter, r *http.Request, ps httprouter.Params, ctx reqcontext.RequestContext) {
 	// Get user ID from token
 	var user User
