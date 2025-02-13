@@ -248,11 +248,53 @@
 		/>
 
 		<!-- Add this new modal for forwarding -->
-		<UserSearchModal
+		<div
 			v-if="showForwardModal"
-			@close="showForwardModal = false"
-			@start-conversation="handleForward"
-		/>
+			class="modal"
+			tabindex="-1"
+			style="display: block"
+		>
+			<div class="modal-dialog">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title">Forward Message</h5>
+						<button
+							type="button"
+							class="btn-close"
+							@click="showForwardModal = false"
+						></button>
+					</div>
+					<div class="modal-body">
+						<h6>Select a conversation to forward to:</h6>
+						<div class="list-group">
+							<button
+								v-for="destination in forwardDestinations"
+								:key="destination.conversationId"
+								class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+								@click="handleForward(destination)"
+							>
+								<div>
+									<img
+										:src="
+											destination.photo ||
+											'/default-avatar.png'
+										"
+										class="rounded-circle me-2"
+										width="30"
+										height="30"
+										alt="Conversation Avatar"
+									/>
+									{{ destination.name }}
+								</div>
+								<span class="badge bg-primary rounded-pill">
+									{{ destination.isGroup ? "Group" : "Chat" }}
+								</span>
+							</button>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
 	</div>
 </template>
 
@@ -286,6 +328,7 @@ export default {
 			newGroupName: "",
 			showForwardModal: false,
 			messageToForward: null,
+			forwardDestinations: [],
 		};
 	},
 	computed: {
@@ -403,25 +446,39 @@ export default {
 			reader.readAsDataURL(file);
 		},
 
-		forwardMessage(message) {
-			this.messageToForward = message;
-			this.showForwardModal = true; // Show user selection modal
+		async forwardMessage(message) {
+			try {
+				// Fetch all conversations you're a part of
+				const response = await this.$axios.get("/conversations");
+
+				// Create a list of possible forward destinations
+				this.forwardDestinations = response.data;
+
+				this.messageToForward = message;
+				this.showForwardModal = true;
+			} catch (error) {
+				console.error("Error fetching conversations:", error);
+				this.errorMsg = "Failed to fetch forward destinations";
+			}
 		},
 
-		async handleForward(recipient) {
+		async handleForward(destination) {
 			try {
 				await this.$axios.post(
 					`/message/${this.messageToForward.messageId}/forward`,
 					{
-						recipientId: recipient.id,
+						conversationId: destination.conversationId,
 					}
 				);
+
 				this.showForwardModal = false;
 				this.messageToForward = null;
 				await this.fetchConversationDetails();
 			} catch (error) {
 				console.error("Forward message error:", error);
-				this.errorMsg = "Failed to forward message";
+				this.errorMsg = `Failed to forward message: ${
+					error.response?.data || error.message
+				}`;
 			}
 		},
 
