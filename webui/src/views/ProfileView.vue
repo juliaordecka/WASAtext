@@ -124,7 +124,7 @@ export default {
 				} catch (error) {
 					console.error("Update photo error:", error);
 					this.errorMsg =
-						error.response?.data ||
+						(error.response && error.response.data) || error.message
 						"Failed to update profile photo";
 					this.successMsg = null;
 				}

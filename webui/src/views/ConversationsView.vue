@@ -33,7 +33,7 @@
 						@click="selectConversation(conv)"
 						:class="{
 							'active-conversation':
-								selectedConversation?.conversationId ===
+								selectedConversation && selectedConversation.conversationId ===
 								conv.conversationId,
 						}"
 					>

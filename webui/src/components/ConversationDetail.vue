@@ -477,7 +477,7 @@ export default {
 			} catch (error) {
 				console.error("Forward message error:", error);
 				this.errorMsg = `Failed to forward message: ${
-					error.response?.data || error.message
+					(error.response && error.response.data) ? error.response.data : error.message
 				}`;
 			}
 		},
@@ -608,7 +608,7 @@ export default {
 			return new Date(dateString).toLocaleString();
 		},
 		hasUserReacted(message) {
-			return message.comments?.some(
+			return message.comments && message.comments.some(
 				(comment) => comment.userId === this.currentUserId
 			);
 		},
