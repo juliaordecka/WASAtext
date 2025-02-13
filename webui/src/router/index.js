@@ -7,12 +7,16 @@ const router = createRouter({
   history: createWebHashHistory(import.meta.env.BASE_URL),
   routes: [
     {
+      path: '/',
+      redirect: '/login'  // Add this redirect for root path
+    },
+    {
       path: '/login',
       name: 'login',
       component: LoginView
     },
     {
-      path: '/',
+      path: '/conversations',
       name: 'conversations',
       component: ConversationsView,
       meta: { requiresAuth: true }
@@ -30,6 +34,11 @@ const router = createRouter({
 router.beforeEach((to, from, next) => {
   const token = localStorage.getItem('token')
   
+  if (to.path === '/login' && token) {
+    next('/conversations')
+    return
+  }
+
   if (to.matched.some(record => record.meta.requiresAuth)) {
     if (!token) {
       next('/login')
@@ -40,5 +49,7 @@ router.beforeEach((to, from, next) => {
     next()
   }
 })
+
+
 
 export default router

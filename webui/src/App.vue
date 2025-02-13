@@ -4,7 +4,7 @@
     <div class="navbar-nav">
       <div class="nav-item text-nowrap" v-if="isLoggedIn">
         <div class="d-flex align-items-center">
-          <span class="text-white me-3">{{ currentUsername }}</span>
+          <span class="text-white me-3">{{ username }}</span>
           <div class="btn-group">
             <RouterLink 
               to="/profile" 
@@ -14,7 +14,7 @@
             </RouterLink>
             <button 
               class="btn btn-sm btn-outline-danger" 
-              @click="logout"
+              @click="handleLogout"
             >
               Logout
             </button>
@@ -33,7 +33,7 @@
         <div class="position-sticky pt-3 sidebar-sticky">
           <ul class="nav flex-column">
             <li class="nav-item">
-              <RouterLink to="/" class="nav-link">
+              <RouterLink to="/conversations" class="nav-link">
                 Conversations
               </RouterLink>
             </li>
@@ -41,67 +41,44 @@
         </div>
       </nav>
       <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
-        <RouterView />
+        <RouterView @login-success="updateUserData" />
       </main>
     </div>
   </div>
 </template>
 
 <script>
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
-import { useRouter } from 'vue-router'
-import { RouterLink, RouterView } from 'vue-router'
-
 export default {
-  setup() {
-    const router = useRouter()
-    const currentUsername = ref('')
-    
-    const updateUsername = () => {
-      const user = JSON.parse(localStorage.getItem('user'))
-      currentUsername.value = user?.username || ''
+  data() {
+    return {
+      username: '',
+      isLoggedIn: false
     }
-
-    const isLoggedIn = computed(() => {
-      return localStorage.getItem('token') !== null
-    })
-
-    const logout = () => {
+  },
+  created() {
+    this.checkLoginStatus()
+  },
+  methods: {
+    checkLoginStatus() {
+      const token = localStorage.getItem('token')
+      const userData = JSON.parse(localStorage.getItem('user') || '{}')
+      this.isLoggedIn = !!token
+      this.username = userData.username || ''
+    },
+    updateUserData() {
+      this.checkLoginStatus()
+    },
+    handleLogout() {
       localStorage.removeItem('token')
       localStorage.removeItem('user')
-      currentUsername.value = ''
-      router.push('/login')
+      this.isLoggedIn = false
+      this.username = ''
+      this.$router.push('/login')
     }
-
-    // Listen for storage changes
-    const storageHandler = (event) => {
-      if (event.key === 'user') {
-        updateUsername()
-      }
-    }
-
-    // Watch for route changes and update username
-    watch(
-      () => router.currentRoute.value,
-      () => {
-        updateUsername()
-      },
-      { immediate: true }
-    )
-
-    onMounted(() => {
-      updateUsername()
-      window.addEventListener('storage', storageHandler)
-    })
-
-    onUnmounted(() => {
-      window.removeEventListener('storage', storageHandler)
-    })
-
-    return {
-      currentUsername,
-      isLoggedIn,
-      logout
+  },
+  watch: {
+    '$route'(to) {
+      this.checkLoginStatus()
     }
   }
 }
