@@ -4,16 +4,30 @@
     <div class="conversation-header d-flex justify-content-between align-items-center p-3 border-bottom">
       <div class="d-flex align-items-center">
         <img 
-          :src="conversation.photo || '/default-avatar.png'" 
+          :src="conversation.photo || '/default-pic.jpg'" 
           class="rounded-circle me-3" 
           width="50" 
           height="50" 
           alt="Conversation Avatar"
         >
-        <h5 class="mb-0">{{ conversation.name }}</h5>
+        <h5 class="mb-0">{{ conversationName }}</h5>
       </div>
       <div class="conversation-actions">
         <div class="btn-group" v-if="conversation.isGroup">
+
+        <button 
+        class="btn btn-sm btn-outline-secondary" 
+        @click="showGroupPhotoInput = true"
+      >
+        Set Photo
+      </button>
+      <button 
+        class="btn btn-sm btn-outline-secondary" 
+        @click="showGroupNameInput = true"
+      >
+        Set Name
+      </button>
+
           <button 
             class="btn btn-sm btn-outline-secondary" 
             @click="showAddMemberModal = true"
@@ -29,6 +43,46 @@
         </div>
       </div>
     </div>
+
+    <div v-if="showGroupPhotoInput && conversation.isGroup" class="p-3 border-bottom">
+  <div class="input-group">
+    <input 
+      type="file" 
+      class="form-control" 
+      @change="handleGroupPhotoUpload" 
+      accept="image/*"
+    >
+    <button 
+      class="btn btn-outline-secondary" 
+      @click="showGroupPhotoInput = false"
+    >
+      Cancel
+    </button>
+  </div>
+</div>
+
+<div v-if="showGroupNameInput && conversation.isGroup" class="p-3 border-bottom">
+  <div class="input-group">
+    <input 
+      type="text" 
+      class="form-control" 
+      v-model="newGroupName" 
+      placeholder="Enter new group name"
+    >
+    <button 
+      class="btn btn-primary" 
+      @click="updateGroupName"
+    >
+      Save
+    </button>
+    <button 
+      class="btn btn-outline-secondary" 
+      @click="showGroupNameInput = false"
+    >
+      Cancel
+    </button>
+  </div>
+</div>
 
     <!-- Messages Container -->
     <div 
@@ -204,10 +258,19 @@ export default {
       currentReactionMessage: null,
       showAddMemberModal: false,
       currentUserId: parseInt(localStorage.getItem('token')),
-      refreshInterval: null
+      refreshInterval: null,
+      showGroupPhotoInput: false, 
+    showGroupNameInput: false,   
+    newGroupName: ''            
+
     }
   },
   computed: {
+    conversationName() {
+      // Use the conversation prop, which should update when the conversation changes
+      return this.conversation.name
+    },
+
     sortedMessages() {
       return [...this.messages].sort((a, b) => 
         new Date(a.sendTime) - new Date(b.sendTime)
@@ -373,6 +436,54 @@ async handlePhotoUpload(event) {
         this.errorMsg = 'Failed to leave group'
       }
     },
+
+  async handleGroupPhotoUpload(event) {
+    const file = event.target.files[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onload = async (e) => {
+      try {
+        const base64Photo = e.target.result.split(',')[1]
+        
+        await this.$axios.put(`/group/${this.conversation.conversationId}/photo`, { 
+          photo: base64Photo
+        })
+        
+        await this.fetchConversationDetails()
+        this.showGroupPhotoInput = false
+      } catch (error) {
+        console.error('Upload group photo error:', error)
+        this.errorMsg = 'Failed to update group photo'
+      }
+    }
+    reader.readAsDataURL(file)
+  },
+
+  async updateGroupName() {
+    if (!this.newGroupName.trim()) {
+      this.errorMsg = 'Group name cannot be empty'
+      return
+    }
+
+    try {
+    const response = await this.$axios.put(`/group/${this.conversation.conversationId}/name`, {
+      name: this.newGroupName
+    })
+    
+    // Update the conversation prop directly
+    this.conversation.name = this.newGroupName
+
+      
+      await this.fetchConversationDetails()
+      this.showGroupNameInput = false
+      this.newGroupName = ''
+    } catch (error) {
+      console.error('Update group name error:', error)
+      this.errorMsg = 'Failed to update group name'
+    }
+  },
+
     async addMemberToGroup(user) {
       try {
         await this.$axios.post(`/group/${this.conversation.conversationId}/add`, {
