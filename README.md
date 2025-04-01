@@ -64,6 +64,9 @@ docker run -it --rm -p 8080:80 wasa-text-frontend:latest
 ```
 
 ## Future improvements
+
 -Fixing the profile/group photo display functionality
+
 -Implementing double checkmarks
+
 -When a message is forwarded, the message preview doesn’t update to the forwarded message
