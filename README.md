@@ -103,6 +103,4 @@ golangci-lint run service/database -E rowserrcheck
 
 Eslint vuejs linter: https://eslint.vuejs.org/
 
-Although I would recommend to have a backup of the latest version of the project or run this on a cloned virtual machine since using this created some issues with the code for me
-
 Use Prettier for code formatting
