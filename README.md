@@ -76,23 +76,33 @@ docker run -it --rm -p 8080:80 wasa-text-frontend:latest
 How to check for errors like in the homework evaluations:
 
 1.	Open-api linter:
+   
 https://github.com/IBM/openapi-validator
+
 Enter the directory and run on api.yaml file as instructed in above repository.
+
 The open-api linter checks the file against yaml and openapi specifications.
 
 2.	Go linter:
+   
 Golangci-lint
 
 run golangci-lint run service/database --enable-all –verbose
+
 run golangci-lint run service/api --enable-all –verbose
 
 With this setting you can find all the errors and corresponding lines of code in which the errors arise.
 
 To check rowserr:
+
 golangci-lint run service/api -E rowserrcheck
+
 golangci-lint run service/database -E rowserrcheck
 
 3.	Vuejs:
+
 Eslint vuejs linter: https://eslint.vuejs.org/
+
 Although I would recommend to have a backup of the latest version of the project or run this on a cloned virtual machine since using this created some issues with the code for me
+
 Use Prettier for code formatting
