@@ -79,7 +79,7 @@ How to check for errors like in the homework evaluations:
    
 https://github.com/IBM/openapi-validator
 
-Enter the directory and run on api.yaml file as instructed in above repository.
+Enter the directory and run on api.yaml file as instructed in the above repository.
 
 The open-api linter checks the file against yaml and openapi specifications.
 
