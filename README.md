@@ -16,6 +16,10 @@ The main features of the app are the following:
 
 ![image](https://github.com/user-attachments/assets/bfbd5e2f-c8a4-4604-9306-7bfc562ea645)
 
+![image](https://github.com/user-attachments/assets/3b9b92fa-b1c9-41e9-a02a-7abdeb530d87)
+
+![image](https://github.com/user-attachments/assets/7358c117-c38d-4c1d-a593-7cde35b57516)
+
 
 ## To run backend only
 
