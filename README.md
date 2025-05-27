@@ -14,6 +14,9 @@ The main features of the app are the following:
 
 -Authentication: Users log in with just a username—if it exists, they are logged in; otherwise, they are registered automatically. The API returns a user identifier, which is used as a token in the Authorization header - the project uses bearer authentification
 
+![image](https://github.com/user-attachments/assets/bfbd5e2f-c8a4-4604-9306-7bfc562ea645)
+
+
 ## To run backend only
 
 Navigate to the repository directory, then run:
